@@ -583,72 +583,66 @@ def main():
     data = pd.read_csv('survey.csv')
     # Clean the data to fix outliers and standardize values
     data = clean_data(data)
+    # Create a copy for EDA
+    eda_data = data.copy()
 
     # Display dataset information
     print("\nDataset Information:")
-    print(f"Shape: {data.shape}")
+    print(f"Shape: {eda_data.shape}")
     print("\nFirst 5 rows of the dataset:")
-    print(data.head())
+    print(eda_data.head())
 
     # Display column information
     print("\nColumn information:")
-    print(data.info())
+    print(eda_data.info())
 
     # Check for missing values
     print("\nMissing values per column:")
-    missing_values = data.isnull().sum()
+    missing_values = eda_data.isnull().sum()
     print(missing_values[missing_values > 0])
 
     # Display basic statistics
     print("\nBasic statistics for numerical columns:")
-    print(data.describe())
+    print(eda_data.describe())
 
     # Identify the target variable (treatment)
     # Assuming the target column is named 'treatment' - we'll verify this and adjust
-    target_candidates = [col for col in data.columns if 'treat' in col.lower()]
+    target_candidates = [col for col in eda_data.columns if 'treat' in col.lower()]
     print(f"\nPossible target columns: {target_candidates}")
 
     # Data Exploration
     print("\n=== Exploratory Data Analysis ===")
 
     # Find categorical and numerical columns
-    categorical_cols = data.select_dtypes(include=['object', 'category']).columns.tolist()
-    numerical_cols = data.select_dtypes(include=['int64', 'float64']).columns.tolist()
+    categorical_cols = eda_data.select_dtypes(include=['object', 'category']).columns.tolist()
+    numerical_cols = eda_data.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
     print(f"\nCategorical columns: {len(categorical_cols)}")
     print(f"Numerical columns: {len(numerical_cols)}")
 
     # Based on dataset investigation, let's identify the target column
     # For now we'll assume it's 'treatment' or similar, but we'll verify this is correct
-    target_col = 'treatment' if 'treatment' in data.columns else None
+    target_col = 'treatment' if 'treatment' in eda_data.columns else None
 
     if target_col:
         print(f"\nTarget variable distribution:")
-        print(data[target_col].value_counts())
-        data[target_col] = data[target_col].map({"Yes": 1, "No": 0})
-        print(f"Percentage seeking treatment: {data[target_col].mean() * 100:.2f}%")
+        print(eda_data[target_col].value_counts())
+        eda_data[target_col] = eda_data[target_col].map({"Yes": 1, "No": 0})
+        print(f"Percentage seeking treatment: {eda_data[target_col].mean() * 100:.2f}%")
     else:
         print("\nTarget column not found. Manual inspection required.")
         # Display unique values for columns that might be the target
         for col in target_candidates:
             print(f"\nUnique values for {col}:")
-            print(data[col].value_counts())
+            print(eda_data[col].value_counts())
 
     # Let's examine example features to better understand the data
     print("\nExploring sample categorical features:")
     for col in categorical_cols[:5]:  # Show first 5 categorical columns
         print(f"\nUnique values for {col}:")
-        print(data[col].value_counts())
+        print(eda_data[col].value_counts())
     """Main execution function for the mental health treatment prediction project."""
     print("=== Mental Health Treatment Prediction Project ===")
-
-
-    # Load and explore the dataset
-    data = pd.read_csv('survey.csv')
-
-    # Clean the data to fix outliers and standardize values
-    data = clean_data(data)
-
 
 
     # Identify the target column - adjust this based on your specific dataset
