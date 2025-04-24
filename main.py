@@ -644,10 +644,10 @@ def main():
 
 
     # Load and explore the dataset
-    #data = pd.read_csv('survey.csv')
+    data = pd.read_csv('survey.csv')
 
     # Clean the data to fix outliers and standardize values
-    #data = clean_data(data)
+    data = clean_data(data)
 
 
 
