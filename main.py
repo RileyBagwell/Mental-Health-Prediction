@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, cross_val_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
@@ -14,8 +13,6 @@ from sklearn.metrics import confusion_matrix, classification_report, roc_curve, 
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.feature_selection import SelectKBest, f_classif, RFE
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
 from imblearn.over_sampling import SMOTE
 import xgboost as xgb
 import warnings
@@ -28,24 +25,8 @@ plt.style.use('seaborn-v0_8-whitegrid')
 sns.set_palette("viridis")
 
 
-
-
-# At this point, we need to confirm which column is our target variable
-# For this code template, let's assume we've identified the target column as 'treatment'
-# In practical implementation, we'd confirm this based on dataset inspection
-
 # Data Preprocessing and Cleaning Function
 def preprocess_data(df, target_column):
-    """
-    Preprocess the mental health survey data for modeling.
-
-    Args:
-        df: Original dataframe
-        target_column: The column name for our prediction target
-
-    Returns:
-        Processed dataframe, feature names, target series
-    """
     print("\n=== Data Preprocessing ===")
 
     # Make a copy of the dataframe to avoid modifying the original
@@ -59,7 +40,6 @@ def preprocess_data(df, target_column):
     y = processed_df[target_column]
 
     # Remove any irrelevant columns (like ID, timestamps, etc.)
-    # This is a placeholder - you'll need to identify these columns in the real dataset
     columns_to_drop = ['Timestamp'] if 'Timestamp' in processed_df.columns else []
     columns_to_drop.append(target_column)  # Add target column to drop list
 
@@ -91,8 +71,6 @@ def preprocess_data(df, target_column):
             X = pd.concat([X, one_hot], axis=1)
             X = X.drop(columns=[col])
         else:
-            # For high cardinality, we might want to use other approaches
-            # For now, we'll drop these columns
             print(f"Dropping high cardinality column: {col} with {X[col].nunique()} unique values")
             X = X.drop(columns=[col])
 
@@ -102,22 +80,7 @@ def preprocess_data(df, target_column):
 
 # Feature Engineering Function
 def engineer_features(X, y):
-    """
-    Create new features and select the most important ones.
-
-    Args:
-        X: Feature dataframe
-        y: Target series
-
-    Returns:
-        DataFrame with selected features
-    """
     print("\n=== Feature Engineering ===")
-
-    # This is where we would create new features based on domain knowledge
-    # For example, we might combine related questions, create interaction terms, etc.
-    # For now, we'll use a basic feature selection approach
-
     # Select top k features
     selector = SelectKBest(f_classif, k=min(20, X.shape[1]))
     X_selected = selector.fit_transform(X, y)
@@ -131,16 +94,8 @@ def engineer_features(X, y):
     return X_selected, selected_features
 
 
+# Clean dataset by fixing outliers
 def clean_data(df):
-    """
-    Clean the dataset by fixing outliers and standardizing values.
-
-    Args:
-        df: Original dataframe
-
-    Returns:
-        Cleaned dataframe
-    """
     print("\n=== Data Cleaning ===")
     df_cleaned = df.copy()
 
@@ -205,7 +160,7 @@ def clean_data(df):
             'Agender': 'Non-binary/Other',
         }
 
-        # Apply mapping - for any value not in the mapping, keep the original value
+        # Apply mapping
         df_cleaned['Gender'] = df_cleaned['Gender'].apply(
             lambda x: gender_mapping.get(x, 'Other' if pd.notna(x) else np.nan)
         )
@@ -215,8 +170,6 @@ def clean_data(df):
 
         print(f"Unique gender values after cleaning: {df_cleaned['Gender'].nunique()}")
         print(f"Gender distribution after cleaning: \n{df_cleaned['Gender'].value_counts()}")
-
-    # Check and fix other potential data issues
 
     # Fix potential issues in self_employed (if present)
     if 'self_employed' in df_cleaned.columns:
@@ -255,16 +208,6 @@ def clean_data(df):
 
 # Model Training and Evaluation Function
 def train_and_evaluate_models(X, y):
-    """
-    Train and evaluate multiple ML models.
-
-    Args:
-        X: Feature matrix
-        y: Target vector
-
-    Returns:
-        Dictionary of trained models and their performance metrics
-    """
     print("\n=== Model Training and Evaluation ===")
 
     # Split data into train/test sets
@@ -308,7 +251,6 @@ def train_and_evaluate_models(X, y):
         recall = recall_score(y_test, y_pred)
         f1 = f1_score(y_test, y_pred)
 
-        # For ROC AUC, we need probability predictions
         if hasattr(model, "predict_proba"):
             y_prob = model.predict_proba(X_test)[:, 1]
             auc = roc_auc_score(y_test, y_prob)
@@ -340,18 +282,6 @@ def train_and_evaluate_models(X, y):
 
 # Hyperparameter Tuning Function
 def tune_best_model(best_model_name, model, X_train, y_train):
-    """
-    Perform hyperparameter tuning on the best performing model.
-
-    Args:
-        best_model_name: Name of the best model
-        model: The model object
-        X_train: Training features
-        y_train: Training target
-
-    Returns:
-        The best model with tuned hyperparameters
-    """
     print(f"\n=== Hyperparameter Tuning for {best_model_name} ===")
 
     # Define parameter grids for different models
@@ -435,15 +365,6 @@ def tune_best_model(best_model_name, model, X_train, y_train):
 
 # Visualization Functions
 def visualize_results(results, X_test, y_test, selected_features=None):
-    """
-    Create visualizations for model evaluation.
-
-    Args:
-        results: Dictionary with model results
-        X_test: Test features
-        y_test: Test target
-        selected_features: List of feature names
-    """
     print("\n=== Visualizing Results ===")
 
     # Model performance comparison
@@ -538,7 +459,7 @@ def visualize_results(results, X_test, y_test, selected_features=None):
         plt.close()
 
     # PCA or t-SNE for visualization
-    if X_test.shape[1] > 2:  # Only if we have more than 2 dimensions
+    if X_test.shape[1] > 2:
         # PCA
         pca = PCA(n_components=2)
         X_pca = pca.fit_transform(X_test)
@@ -557,7 +478,7 @@ def visualize_results(results, X_test, y_test, selected_features=None):
         plt.savefig('pca_visualization.png')
         plt.close()
 
-        # t-SNE (can be slow for large datasets)
+        # t-SNE
         if X_test.shape[0] < 2000:  # Only do t-SNE for smaller datasets
             tsne = TSNE(n_components=2, random_state=42)
             X_tsne = tsne.fit_transform(X_test)
@@ -606,7 +527,6 @@ def main():
     print(eda_data.describe())
 
     # Identify the target variable (treatment)
-    # Assuming the target column is named 'treatment' - we'll verify this and adjust
     target_candidates = [col for col in eda_data.columns if 'treat' in col.lower()]
     print(f"\nPossible target columns: {target_candidates}")
 
@@ -620,8 +540,6 @@ def main():
     print(f"\nCategorical columns: {len(categorical_cols)}")
     print(f"Numerical columns: {len(numerical_cols)}")
 
-    # Based on dataset investigation, let's identify the target column
-    # For now we'll assume it's 'treatment' or similar, but we'll verify this is correct
     target_col = 'treatment' if 'treatment' in eda_data.columns else None
 
     if target_col:
@@ -636,21 +554,16 @@ def main():
             print(f"\nUnique values for {col}:")
             print(eda_data[col].value_counts())
 
-    # Let's examine example features to better understand the data
     print("\nExploring sample categorical features:")
     for col in categorical_cols[:5]:  # Show first 5 categorical columns
         print(f"\nUnique values for {col}:")
         print(eda_data[col].value_counts())
-    """Main execution function for the mental health treatment prediction project."""
     print("=== Mental Health Treatment Prediction Project ===")
 
 
-    # Identify the target column - adjust this based on your specific dataset
-    # For the OSMI Mental Health in Tech Survey, the target might be named differently
     target_candidates = [col for col in data.columns if 'treatment' in col.lower()]
     print(f"Potential target columns: {target_candidates}")
 
-    # For this template, we'll assume the first candidate is our target
     if target_candidates:
         target_column = target_candidates[0]
     else:
